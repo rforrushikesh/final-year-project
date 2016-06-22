@@ -1,0 +1,238 @@
+## PYTHON code for project.
+
+##Import necessary fles.
+
+import serial
+import time
+import sqlite3
+import random
+
+## Create database and make its object.
+
+conn = sqlite3.connect('mydatabase.db')
+cur = conn.cursor()
+
+## Set COM Port and baudrate
+
+arduinodata = serial.Serial('com29',9600)
+
+## Main program starts here:
+
+while 1 == 1 :
+    ## Initialising variables.
+    
+    cnt = 0
+    i = ''
+    pas = ''
+    b = ''
+    new = 'new'
+    operation = 0
+    acc_number = ''
+    letter = 0
+    msg = ''
+    out = ''
+    ini = 'H'
+    newid = ''
+    number = '10'
+    success = '123'
+    time.sleep(3)
+    while(arduinodata.inWaiting() < 0):
+                                    g = 1
+    while(arduinodata.inWaiting() >= 0):
+                                    msg = arduinodata.readline()
+                                    print msg
+                                    if msg[0] == new[0] or msg[0] == ini[0] :
+                                        break
+    msg = str(msg)
+    if msg[0] == new[0] :
+                                    ## New USER detected.
+        
+                                    print ' new received from Arduino'
+                                    newacc = random.randint(1000000000 , 9999999999)
+                                    newpass = random.randint(10000  , 99999)
+                                    newid = random.randint(100 , 200)
+                                    newacc = str(newacc)
+                                    newpass = str(newpass)
+                                    newid = str(newid)
+                                    print newpass
+                                    print newacc
+                                    print newid
+                                    arduinodata.write(newacc)
+                                    while(arduinodata.inWaiting() < 0):
+                                                                    g = 1
+                                    while(arduinodata.inWaiting() >= 0):
+                                                                    out += arduinodata.readline()
+                                                                    break
+                                    if out != '':
+                                                                    print  out
+                                    out = ''
+                                    time.sleep(0.1)
+                                    arduinodata.write(newpass)
+                                    while(arduinodata.inWaiting() < 0):
+                                                                    g = 1
+                                    while(arduinodata.inWaiting() >= 0):
+                                                                    out += arduinodata.readline()
+                                                                    break
+                                    if out != '':
+                                                                    print  out
+                                    out = ''
+                                    time.sleep(0.1)
+                                    arduinodata.write(newid)
+                                    while(arduinodata.inWaiting() < 0):
+                                                                    g = 1
+                                    while(arduinodata.inWaiting() >= 0):
+                                                                    out += arduinodata.readline()
+                                                                    break
+                                    if out != '':
+                                                                    print  out
+                                    out = ''
+                                    time.sleep(0.1)
+                                    while(arduinodata.inWaiting() < 0):
+                                                                    g = 1
+                                    while(arduinodata.inWaiting() >= 0):
+                                                                    msg = arduinodata.readline()
+                                                                    print msg
+                                                                    index = 0
+                                                                    while index < len(msg):
+                                                                        out += msg[index]
+                                                                        index = index + 1
+                                                                    if out[0 : 2] == number[0 : 2] :
+                                                                        print 'FAILED '
+                                                                        print 'Account is not created'
+                                                                        arduinodata.write("failn")
+                                                                        break
+                                                                    if out[0 : 3] == success[0 : 3]:
+##                                                                        print out[0 :3]
+##                                                                        print success[0 : 3]
+##                                                                        print len(out)
+##                                                                        print len(success)
+                                                                        print 'Fingerprint saved successfully'
+                                                                        cur.execute('INSERT INTO ATM (ACCOUNTNO, Password,NAME, Balance , FingerID) VALUES ( ?, ? , ? , ? , ? )',
+                                                                        ( newacc, newpass,'Guest', 1000 , newid))
+                                                                        conn.commit()
+                                                                        arduinodata.write("yesn")
+                                                                        break
+                                                                    out = ''
+                                     
+    elif msg[0] == ini[0]:
+
+        ## Existing user Program.
+                                    while(arduinodata.inWaiting() < 0):
+                                                                    g = 1
+                                    print 'Getting  FingerID , account number and password'
+                                    while(arduinodata.inWaiting() >= 0):
+                                                                    id = arduinodata.readline()
+                                                                    print id                               ## Get fingerprint ID
+                                                                    acc_number = arduinodata.readline()
+                                                                    print acc_number                       ## Get account number
+                                                                    passwd = arduinodata.readline()
+                                                                    print passwd                           ## Get Password
+                                                                    break                                  
+                                    print 'What you entered'
+                                    id =str(id)
+                                    acc_number = str(acc_number)
+                                    print len(acc_number)
+                                    passwd = str(passwd)
+                                    print len(passwd)
+
+                                    ## Database operations
+                                    
+                                    cur.execute('SELECT Password FROM ATM WHERE FingerID = ' + id)
+                                    print 'Verifying password and account number from database......'
+                                    for row in cur :
+                                                                    print row
+                                                                    letter= row[0]
+                                    
+                                    letter = str(letter)                                                     ## Password from database.
+                                   
+                                    print letter
+                                    print len(letter)
+                                    cur.execute('SELECT ACCOUNTNO FROM ATM WHERE FingerID = ' + id)
+                                    for row in cur :
+                                                                    print row
+                                                                    acc1= row[0]
+                                    acc1 = str(acc1)                                                          ## Account number from database.
+                                   
+                                    print acc1
+                                    print len(acc1)
+                                    index = 0
+                                    
+                                    while index < len(passwd)- 2 :
+                                                    pas = pas + passwd[index]
+                                                    index = index + 1
+                                    print pas
+                                    index = 0
+                                    
+                                    while index < len(acc_number) - 2:
+                                                    b = b + acc_number[index]
+                                                    index = index + 1
+                                    print b
+                                    if pas == letter :                                                          ## Checking password
+                                                            if b == acc1:                                       ## Checking Account number
+                                                                    print "Sending positive responce to Arduino"
+                                                                    arduinodata.write("yesn")
+                                                                    time.sleep(0.1)
+                                                                    print 'Waiting for transaction'
+                                                                    while(arduinodata.inWaiting() < 0):
+                                                                            g = 1
+                                                                    while(arduinodata.inWaiting() >= 0):
+                                                                            out += arduinodata.readline()
+                                                                            break
+                                                                    if out != '':
+                                                                            print  out
+                                                
+                                                                    w=out[0]
+                                                                    if w == "2" :                                ## Withdraw operation
+                                                                            print 'Withdraw'
+                                                                            print len(out)
+                                                                            operation = int(out[2:len(out)-2])
+                                                                            print operation
+                                                                            bigb = int(operation)
+                                                                            if ( bigb % 100 == 0):
+                                                                                cur.execute('SELECT Balance FROM ATM WHERE ACCOUNTNO = ' + b)
+                                                                                for row in cur :
+                                                                                   balance = row[0]
+                                                                                balance = balance - operation
+                                                                                print balance
+                                                                                if balance >= 0 :
+                                                                                        balance=str(balance)
+                                                                                        cur.execute('UPDATE ATM SET balance = '+ balance +' WHERE ACCOUNTNO = ' + b)
+                                                                                        conn.commit()
+                                                                                        cur.execute('SELECT Balance FROM ATM WHERE ACCOUNTNO = ' + b)
+                                                                                        for row in cur :
+                                                                                                print 'Remaining balance is = '+ str(row[0])
+                                                                                        arduinodata.write("yesn")
+                                                                                else:
+                                                                                        arduinodata.write("failn")
+                                                                            else:
+                                                                                print 'Cash cannot be issued.'
+                                                                                arduinodata.write("failn")
+                                                                    if w == "3" :                                    ##  Balance Enquiry operation
+                                                                            print 'Balance enquiry'
+                                                                            cur.execute('SELECT Balance FROM ATM WHERE ACCOUNTNO = ' + b)
+                                                                            for row in cur :
+                                                                                    acc_bal = row[0]
+                                                                            print 'Account balance is = ' + str(acc_bal)
+                                                                            arduinodata.write(str(acc_bal))
+                                                                    if w == "4":                                     ##  PIN change operation.
+                                                                            print 'PIN change'
+                                                                            password = out[2:7]
+                                                                            print password
+                                                                            cur.execute('UPDATE ATM SET Password = '+ password +' WHERE ACCOUNTNO = ' + b)
+                                                                            conn.commit()
+                                                                            print 'Changed password= ' + password
+                                                                            arduinodata.write("yesn")
+                                                            else:
+                                                                    print "Sending negative responce to Arduino1"
+                                                                    arduinodata.write("failn")
+                                    else:
+                                                            print "Sending negative responce to Arduino"
+                                                            arduinodata.write("failn")
+                                                
+		
+conn.close()
+	
+	
+		
+		
+	
